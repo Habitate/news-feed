@@ -32,10 +32,10 @@ class MainWindow : public QMainWindow{
 
         std::vector<Article> recieve_articles(const std::string& query);
 
+        void open_selected_article();
+
     private slots:
         void on_search_button_clicked();
-
-        void on_open_button_clicked();
 
     private:
         Ui::MainWindow* ui;
