@@ -53,10 +53,6 @@ std::vector<Article> MainWindow::recieve_articles(const std::string& query){
 
     json = json["response"];
 
-
-    int num = json["pages"];
-    qDebug() << num << '\n';
-
     if(const std::string& status = json["status"]; status != "ok"){
         throw std::string("Status error -> " + status + '\n');
     }
@@ -74,7 +70,8 @@ void MainWindow::on_search_button_clicked(){
     articles.clear();
 
     for(size_t i = 1, last = ui->search_size->text().toUInt(); i <= last; ++i){
-        auto page = recieve_articles(ui->search_bar->text().toStdString() + "&page=" + std::to_string(i));
+        std::string query = ui->search_bar->text().toStdString() + "&page=" + std::to_string(i);
+        auto page = recieve_articles(query);
         articles.insert(std::end(articles), std::begin(page), std::end(page));
     }
 

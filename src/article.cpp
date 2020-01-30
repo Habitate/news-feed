@@ -4,7 +4,6 @@
 #include <QProcess>
 
 Article::Article(const nlohmann::json& json){
-    pillar_name = json["pillarName"];
     section_name = json["sectionName"];
     web_publication_date = json["webPublicationDate"];
     web_title = json["webTitle"];

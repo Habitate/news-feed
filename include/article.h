@@ -9,7 +9,6 @@ class Article{
     Article(const nlohmann::json& json);
     void open_url();
 
-    std::string pillar_name;
     std::string section_name;
     std::string web_publication_date;
     std::string web_title;
