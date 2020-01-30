@@ -15,12 +15,11 @@
 #include <json.h>
 #include <QListWidgetItem>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+namespace Ui{
+    class MainWindow;
+}
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow{
         Q_OBJECT
 
     public:
@@ -31,7 +30,7 @@ class MainWindow : public QMainWindow
 
         std::string query_to_request(std::string request);
 
-        void recieve_articles(const std::string& query);
+        std::vector<Article> recieve_articles(const std::string& query);
 
     private slots:
         void on_search_button_clicked();
@@ -39,9 +38,8 @@ class MainWindow : public QMainWindow
         void on_open_button_clicked();
 
     private:
-        Ui::MainWindow *ui;
+        Ui::MainWindow* ui;
 
-        std::string request;
         std::vector<Article> articles;
         std::vector<QListWidgetItem*> article_listing;
 };

@@ -1,6 +1,7 @@
 #include "article.h"
 #include "windows.h"
 #include <json.h>
+#include <QProcess>
 
 Article::Article(const nlohmann::json& json){
     pillar_name = json["pillarName"];
@@ -11,5 +12,8 @@ Article::Article(const nlohmann::json& json){
 }
 
 void Article::open_url(){
-    system(("start " + web_url).c_str());
+    QProcess process;
+
+    process.start(("cmd.exe /C start " + web_url).c_str());
+    process.waitForFinished();
 }

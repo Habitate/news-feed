@@ -41,7 +41,9 @@ std::string MainWindow::query_to_request(std::string request){
     return request_s.str();
 }
 
-void MainWindow::recieve_articles(const std::string& query){
+std::vector<Article> MainWindow::recieve_articles(const std::string& query){
+    std::vector<Article> result;
+
     nlohmann::json json = nlohmann::json::parse(recieve_json(query_to_request(query)));
 
     if(json.empty()){
@@ -57,23 +59,18 @@ void MainWindow::recieve_articles(const std::string& query){
     auto articles_j = json["results"];
 
     for(auto& article_j : articles_j){
-        articles.emplace_back(Article{article_j});
+        result.emplace_back(Article{article_j});
     }
+
+    return result;
 }
 
 
 void MainWindow::on_search_button_clicked(){
-    articles.clear();
+    articles = recieve_articles(ui->search_bar->text().toStdString());
 
-    for(auto& ptr : article_listing){
-        delete ptr;
-    }
-
+    std::for_each(std::begin(article_listing), std::end(article_listing), [](auto& ptr){ delete ptr; });
     article_listing.clear();
-
-    std::string query = ui->search_bar->text().toStdString();
-    request = query_to_request(query);
-    recieve_articles(query);
 
     for(auto& article : articles){
         article_listing.emplace_back(new QListWidgetItem(article.web_title.c_str(), ui->article_list));
@@ -81,7 +78,7 @@ void MainWindow::on_search_button_clicked(){
 }
 
 void MainWindow::on_open_button_clicked(){
-    for(size_t i = 0; i < article_listing.size(); ++i){
+    for(size_t i = 0, size = article_listing.size(); i < size; ++i){
         if(article_listing[i]->isSelected()){
             articles[i].open_url();
         }
