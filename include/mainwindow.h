@@ -14,6 +14,7 @@
 #include <QDebug>
 #include <json.h>
 #include <QListWidgetItem>
+#include <curlpp/Easy.hpp>
 
 namespace Ui{
     class MainWindow;
@@ -28,7 +29,7 @@ class MainWindow : public QMainWindow{
 
         std::string recieve_json(const std::string& url);
 
-        std::string query_to_request(std::string request);
+        std::string query_to_request(std::string query);
 
         std::vector<Article> recieve_articles(const std::string& query);
 
@@ -41,6 +42,5 @@ class MainWindow : public QMainWindow{
         Ui::MainWindow* ui;
 
         std::vector<Article> articles;
-        std::vector<QListWidgetItem*> article_listing;
 };
 #endif // MAINWINDOW_H

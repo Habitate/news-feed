@@ -3,14 +3,21 @@
 #include <QDebug>
 #include <QListWidgetItem>
 
+#include <thread>
+#include <future>
+#include <exception>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-{
+    , articles()
+{   
     ui->setupUi(this);
 
-    connect(ui->article_list, &QListWidget::itemDoubleClicked, this, &MainWindow::open_selected_article);
     connect(ui->search_bar, &QLineEdit::returnPressed, this, &MainWindow::on_search_button_clicked);
+    connect(ui->article_list, &QListWidget::itemActivated, this, &MainWindow::open_selected_article);
+
+    ui->search_size->setValue(10);
 }
 
 MainWindow::~MainWindow(){
@@ -18,14 +25,14 @@ MainWindow::~MainWindow(){
 }
 
 std::string MainWindow::recieve_json(const std::string& url){
-    cURLpp::Easy easyhandle;
     std::ostringstream response;
 
-    easyhandle.setOpt(curlpp::Options::Url(url));
-    easyhandle.setOpt(curlpp::Options::CaInfo("cacert.pem"));
-    easyhandle.setOpt(cURLpp::Options::WriteStream(&response));
-
-    easyhandle.perform();
+    //? Can't be static because it's being used by threads
+    curlpp::Easy easy;
+    easy.setOpt(curlpp::Options::CaInfo("cacert.pem"));
+    easy.setOpt(curlpp::Options::Url(url));
+    easy.setOpt(cURLpp::Options::WriteStream(&response));
+    easy.perform();
 
     return response.str();
 }
@@ -38,54 +45,51 @@ std::string MainWindow::query_to_request(std::string query){
         space_pos = query.find(' ', space_pos);
     }
 
-    std::string request = "https://content.guardianapis.com/search?q=" + query + "&api-key=" + "41cb60b3-01b8-4607-91a6-65d99b9e0b02";
-    return request;
+    return "https://content.guardianapis.com/search?q=" + query + "&api-key=" + "41cb60b3-01b8-4607-91a6-65d99b9e0b02";
 }
 
 std::vector<Article> MainWindow::recieve_articles(const std::string& query){
-    std::vector<Article> result;
-
     nlohmann::json json = nlohmann::json::parse(recieve_json(query_to_request(query)));
 
     if(json.empty()){
-        throw std::string("Recieved an empty json...\n");
+        throw std::runtime_error("Recieved an empty json...\n");
     }
 
     json = json["response"];
 
     if(const std::string& status = json["status"]; status != "ok"){
-        throw std::string("Status error -> " + status + '\n');
+       throw std::runtime_error("Status error -> " + status + '\n');
     }
 
-    auto articles_j = json["results"];
+    json = json["results"];
 
-    for(auto& article_j : articles_j){
-        result.emplace_back(Article{article_j});
-    }
-
-    return result;
+    return std::vector<Article>{begin(json), end(json)};
 }
 
 void MainWindow::on_search_button_clicked(){
-    articles.clear();
+    const auto item_count = ui->search_size->text().toUInt();
+    const auto query = ui->search_bar->text().toStdString() + "&page=";
 
-    for(size_t i = 1, last = ui->search_size->text().toUInt(); i <= last; ++i){
-        std::string query = ui->search_bar->text().toStdString() + "&page=" + std::to_string(i);
-        auto page = recieve_articles(query);
+    //* Fetch articles in seperate threads
+    std::vector<std::future<std::vector<Article>>> futures(item_count);
+    for(size_t i = 0, last = futures.size(); i < last; ++i){
+       futures[i] = std::async(&MainWindow::recieve_articles, this, query + std::to_string(i + 1));
+    }
+
+    //* Clear the previuos articles and append new ones
+    articles.clear();
+    for(auto& future : futures){
+        auto page = future.get();
         articles.insert(std::end(articles), std::begin(page), std::end(page));
     }
 
-    std::for_each(std::begin(article_listing), std::end(article_listing), [](auto& ptr){ delete ptr; });
-    article_listing.clear();
+    //* Clear the previous headlines and append new ones
+    ui->article_list->clear();
     for(auto& article : articles){
-        article_listing.emplace_back(new QListWidgetItem(article.web_title.c_str(), ui->article_list));
+        ui->article_list->addItem(article.web_title.c_str());
     }
 }
 
 void MainWindow::open_selected_article(){
-    for(size_t i = 0, size = article_listing.size(); i < size; ++i){
-        if(article_listing[i]->isSelected()){
-            articles[i].open_url();
-        }
-    }
+    articles[ui->article_list->currentRow()].open_url();
 }
