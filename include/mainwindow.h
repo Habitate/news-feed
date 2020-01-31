@@ -31,7 +31,9 @@ class MainWindow : public QMainWindow{
 
         std::string query_to_request(std::string query);
 
-        std::vector<Article> recieve_articles(const std::string& query);
+        nlohmann::json recieve_guardian_response(const std::string& query);
+
+        std::vector<Article> parse_articles(nlohmann::json query);
 
         void open_selected_article();
 
