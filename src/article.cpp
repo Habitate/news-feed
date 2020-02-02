@@ -1,7 +1,10 @@
 #include "article.h"
-#include "windows.h"
-#include <json.h>
+
 #include <QProcess>
+
+#include "windows.h"
+
+#include <json.h>
 
 Article::Article(const nlohmann::json& json){
     section_name = json["sectionName"];
